@@ -439,8 +439,7 @@ class CameraFragment : BaseFragment<FragmentCameraBinding>(R.layout.fragment_cam
                 viewLifecycleOwner, // current lifecycle owner
                 hdrCameraSelector ?: lensFacing, // either front or back facing
                 preview, // camera preview use case
-                imageCapture, // image capture use case
-                imageAnalyzer, // image analyzer use case
+                imageCapture // image capture use case
             ).run {
                 // Init camera exposure control
                 cameraInfo.exposureState.run {
@@ -530,11 +529,14 @@ class CameraFragment : BaseFragment<FragmentCameraBinding>(R.layout.fragment_cam
             OutputFileOptions.Builder(file)
         }.setMetadata(metadata).build()
 
+        val startTime = System.currentTimeMillis()
+
         localImageCapture.takePicture(
             outputOptions, // the options needed for the final image
             requireContext().mainExecutor(), // the executor, on which the task will run
             object : OnImageSavedCallback { // the callback, about the result of capture process
                 override fun onImageSaved(outputFileResults: OutputFileResults) {
+                    Log.e("CAPTURE-TIMING", "onImageSaved: after ${System.currentTimeMillis() - startTime}ms")
                     // This function is called if capture is successfully completed
                     outputFileResults.savedUri
                         ?.let { uri ->
@@ -544,7 +546,13 @@ class CameraFragment : BaseFragment<FragmentCameraBinding>(R.layout.fragment_cam
                         ?: setLastPictureThumbnail()
                 }
 
+                override fun onCaptureStarted() {
+                    super.onCaptureStarted()
+                    Log.e("CAPTURE-TIMING", "onCaptureStarted: after ${System.currentTimeMillis() - startTime}ms")
+                }
+
                 override fun onError(exception: ImageCaptureException) {
+                    Log.e("CAPTURE-TIMING", "onError: after ${System.currentTimeMillis() - startTime}ms")
                     // This function is called if there is an errors during capture process
                     val msg = "Photo capture failed: ${exception.message}"
                     Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
